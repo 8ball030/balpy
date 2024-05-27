@@ -163,6 +163,7 @@ class balpy(object):
         }
     }
 
+    apiEndpoint = "http://localhost:3000/"
     apiEndpoint = "https://api.balancer.fi/"
 
     # ABIs and Deployment Addresses
