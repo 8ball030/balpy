@@ -6,7 +6,7 @@ authors = ["Greg <greg@orb.cl>"]
 license = "GNU GPL 3"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<4"
+python = ">3.9,<4"
 Cython=">=0.29.24"
 cytoolz="0.11.2"
 requests=">=2.25.1"
