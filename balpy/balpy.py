@@ -29,11 +29,14 @@ from web3.gas_strategies.time_based import (
 )
 from web3.middleware import geth_poa_middleware
 
+from third_party.balpy.balpy.enums.types import Chain, SwapType
+
 # balpy modules
 from . import balancerErrors as be
 from .enums.stablePoolJoinExitKind import StablePhantomPoolJoinKind
 from .enums.weightedPoolJoinExitKind import WeightedPoolExitKind, WeightedPoolJoinKind
 
+BALANCER_API_ENDPOINT = "https://api-v3.balancer.fi/"
 
 class Suppressor(object):
     def __enter__(self):
@@ -163,8 +166,7 @@ class balpy(object):
         }
     }
 
-    apiEndpoint = "http://localhost:3000/"
-    apiEndpoint = "https://api.balancer.fi/"
+    apiEndpoint = BALANCER_API_ENDPOINT
 
     # ABIs and Deployment Addresses
     abis = {}
@@ -3066,6 +3068,8 @@ class balpy(object):
         # API gets grumpy when you send it numbers. Send everything as a string
         for field in query:
             query[field] = str(query[field])
+        # breakpoint()
+
         response = requests.post(
             self.balGetApiEndpointSor(),
             headers={"Content-Type": "application/json"},
@@ -3077,6 +3081,80 @@ class balpy(object):
 
         return batch_swap
 
+    def _getSorGetSwapPaths(self,
+                           chain: Chain,
+                           swapAmount: float,
+                           tokenIn: str,
+                           tokenOut: str,
+                           swapType: SwapType = SwapType.EXACT_IN,
+                           swapOptions: dict = None,
+                           queryBatchSwap: bool = True,
+                           ):
+        """
+        Calls the SOR api from the Balancer to get swap paths.
+        Args:
+            chain (Chain): The chain to query.
+            swapAmount (float): The amount to swap.
+            tokenIn (str): The token to swap in.
+            tokenOut (str): The token to swap out.
+            swapType (SwapType, optional): The type of swap. Defaults to SwapType.EXACT_IN.
+            swapOptions (dict, optional): The options for the swap. Defaults to None.
+            queryBatchSwap (bool, optional): Whether to query batch swap. Defaults to True.
+        Returns:
+            dict: The response from the SOR.
+        
+        """
+        if not swapOptions:
+            swapOptions = DEFAULT_SWAP_OPTIONS
+            swapOptions["timestamp"] = int(time.time())
+        query_string = """
+          query sorGetSwapPaths(
+            $chain: GqlChain!,
+            $swapAmount: AmountHumanReadable!,
+            $queryBatchSwap: Boolean!,
+            $swapType: GqlSorSwapType!,
+            $tokenIn: String!,
+            $tokenOut: String!,
+            $callDataInput: GqlSwapCallDataInput,
+            $useProtocolVersion: Int
+          ) {
+            sorGetSwapPaths(
+              chain: $chain,
+              swapAmount: $swapAmount,
+              queryBatchSwap: $queryBatchSwap,
+              swapType: $swapType,
+              tokenIn: $tokenIn,
+              tokenOut: $tokenOut,
+              callDataInput: $callDataInput,
+              useProtocolVersion: $useProtocolVersion
+            ) {
+              swaps {
+                  assetOutIndex,
+                  amount,
+                  assetInIndex,
+                  poolId
+                }
+              
+              returnAmount,
+              tokenInAmount,
+              tokenOutAmount,
+              effectivePrice,
+              tokenAddresses
+            }
+            }
+        """
+        params = {
+            "chain": chain,
+            "swapAmount": swapAmount,
+            "tokenIn": tokenIn,
+            "tokenOut": tokenOut,
+            "swapType": swapType,
+            "queryBatchSwap": queryBatchSwap,
+        }
+
+        response = requests.post(BALANCER_API_ENDPOINT, json={"query": query_string, "variables": params})
+
+        return response.json()['data']['sorGetSwapPaths']
     def balSorResponseToBatchSwapFormat(self, query, response):
         sor = query["sor"]
         del query["sor"]
