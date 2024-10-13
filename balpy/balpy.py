@@ -29,7 +29,7 @@ from web3.gas_strategies.time_based import (
 )
 from web3.middleware import geth_poa_middleware
 
-from third_party.balpy.balpy.enums.types import Chain, SwapType
+from .enums.types import Chain, SwapType
 
 # balpy modules
 from . import balancerErrors as be
