@@ -11,6 +11,15 @@ import requests
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
 
+from balpy.enums.types import Chain, SwapType
+
+from balpy.balpy import BALANCER_API_ENDPOINT
+
+DEFAULT_SWAP_OPTIONS = {
+    "maxPools": 4,
+    "queryBatchSwap": True,
+}
+
 
 class TheGraph(object):
     client = None
@@ -292,6 +301,80 @@ class TheGraph(object):
             response = self.client.execute(gql(formatted_query_string))
         return response
 
+    def getSorGetSwapPaths(self,
+                           chain: Chain,
+                           swapAmount: float,
+                           tokenIn: str,
+                           tokenOut: str,
+                           swapType: SwapType = SwapType.EXACT_IN,
+                           swapOptions: dict = None,
+                           queryBatchSwap: bool = True,
+                           ):
+        """
+        Calls the SOR api from the Balancer to get swap paths.
+        Args:
+            chain (Chain): The chain to query.
+            swapAmount (float): The amount to swap.
+            tokenIn (str): The token to swap in.
+            tokenOut (str): The token to swap out.
+            swapType (SwapType, optional): The type of swap. Defaults to SwapType.EXACT_IN.
+            swapOptions (dict, optional): The options for the swap. Defaults to None.
+            queryBatchSwap (bool, optional): Whether to query batch swap. Defaults to True.
+        Returns:
+            dict: The response from the SOR.
+        
+        """
+        if not swapOptions:
+            swapOptions = DEFAULT_SWAP_OPTIONS
+            swapOptions["timestamp"] = int(time.time())
+        query_string = """
+          query sorGetSwapPaths(
+            $chain: GqlChain!,
+            $swapAmount: AmountHumanReadable!,
+            $queryBatchSwap: Boolean!,
+            $swapType: GqlSorSwapType!,
+            $tokenIn: String!,
+            $tokenOut: String!,
+            $callDataInput: GqlSwapCallDataInput,
+            $useProtocolVersion: Int
+          ) {
+            sorGetSwapPaths(
+              chain: $chain,
+              swapAmount: $swapAmount,
+              queryBatchSwap: $queryBatchSwap,
+              swapType: $swapType,
+              tokenIn: $tokenIn,
+              tokenOut: $tokenOut,
+              callDataInput: $callDataInput,
+              useProtocolVersion: $useProtocolVersion
+            ) {
+              swaps {
+                  assetOutIndex,
+                  amount,
+                  assetInIndex,
+                  poolId
+                }
+              
+              returnAmount,
+              tokenInAmount,
+              tokenOutAmount,
+              effectivePrice,
+              tokenAddresses
+            }
+            }
+        """
+        params = {
+            "chain": chain,
+            "swapAmount": swapAmount,
+            "tokenIn": tokenIn,
+            "tokenOut": tokenOut,
+            "swapType": swapType,
+            "queryBatchSwap": queryBatchSwap,
+        }
+
+        response = requests.post(BALANCER_API_ENDPOINT, json={"query": query_string, "variables": params})
+
+        return response.json()['data']['sorGetSwapPaths']
 
 def main():
 
@@ -305,7 +388,7 @@ def main():
     else:
         network = sys.argv[1]
 
-    networks = ["mainnet", "kovan", "polygon", "arbitrum"]
+    networks = ["mainnet", "kovan", "polygon", "arbitrum", "gnosis"]
 
     if network not in networks:
         print("Network", network, "is not supported!")
@@ -317,10 +400,26 @@ def main():
 
     verbose = True
 
-    graph = TheGraph(network)
+    graph = TheGraph(network, customUrl=BALANCER_API_ENDPOINT, usingJsonEndpoint=True)
     # pools = graph.getNumPools(verbose=verbose)
-    pools = graph.getV2Pools(batch_size, verbose=verbose)
-    graph.printJson(pools)
+    # pools = graph.getV2Pools(batch_size, verbose=verbose)
+    # graph.printJson(pools)
+
+
+    for i in range(0, 10):
+        config = {
+            "chain": Chain.GNOSIS.value,
+            "swapAmount": str(50.00 * (1 + i ** 3)),
+            "swapType": "EXACT_IN",
+            # "tokenOut": "0xcE11e14225575945b8E6Dc0D4F2dD4C570f79d9f",
+            # "tokenIn": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
+            "tokenIn": "0xcE11e14225575945b8E6Dc0D4F2dD4C570f79d9f",
+            "tokenOut": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
+        }
+    
+        paths = graph.getSorGetSwapPaths(**config)
+        rate = paths['effectivePrice']
+        print( f"{1 / float(rate) } for 1 {config['tokenIn']} to {config['tokenOut']} size: {config['swapAmount']} output: {paths['returnAmount']}")
 
 
 if __name__ == "__main__":
