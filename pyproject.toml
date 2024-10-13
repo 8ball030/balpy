@@ -8,7 +8,7 @@ license = "GNU GPL 3"
 [tool.poetry.dependencies]
 python = ">=3.9,<4"
 Cython=">=0.29.24"
-cytoolz="0.11.2"
+cytoolz=">=0.11.2"
 requests=">=2.25.1"
 eth-abi=">=2.1.1"
 gql=">=2.0.0"
