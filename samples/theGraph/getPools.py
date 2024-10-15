@@ -5,7 +5,6 @@ import balpy.graph.graph as balGraph
 
 
 def main(network="mainnet"):
-
     batch_size = 100
 
     networks = ["mainnet", "kovan", "polygon", "goerli", "gnosis-chain"]
@@ -25,7 +24,6 @@ def main(network="mainnet"):
 
 
 if __name__ == "__main__":
-
     print()
     if len(sys.argv) < 2:
         print("Usage: python", sys.argv[0], "<network>")

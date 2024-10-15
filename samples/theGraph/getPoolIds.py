@@ -5,7 +5,6 @@ import balpy.graph.graph as balGraph
 
 
 def main(network="mainnet"):
-
     batch_size = 100
     networks = ["mainnet", "kovan", "polygon", "gnosis-chain"]
 

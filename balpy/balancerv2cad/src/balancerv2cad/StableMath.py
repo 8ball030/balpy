@@ -15,12 +15,10 @@ class BalancerMathResult:
 
 
 class StableMath:
-
     # -------------------------------------
     @staticmethod
     def calculateInvariant(amplificationParameter: Decimal,
                            balances: list) -> Decimal:
-
         # /**********************************************************************************************
         # // invariant                                                                                 //
         # // D = invariant                                                  D^(n+1)                    //
@@ -224,7 +222,6 @@ class StableMath:
         tokenIndexOut: int,
         tokenAmountOut: Decimal,
     ) -> Decimal:
-
         # /**************************************************************************************************************
         # // inGivenOut token x for y - polynomial equation to solve                                                   //
         # // ax = amount in to calculate                                                                               //
@@ -257,7 +254,6 @@ class StableMath:
         tokenIndexOut: int,
         tokenAmountIn: Decimal,
     ) -> Decimal:
-
         # /**************************************************************************************************************
         # // outGivenIn token x for y - polynomial equation to solve                                                   //
         # // ay = amount out to calculate                                                                              //
@@ -340,7 +336,6 @@ class StableMath:
     def calcTokensOutGivenExactBptIn(
         balances: list, bptAmountIn: Decimal, bptTotalSupply: Decimal
     ) -> list:
-
         # /**********************************************************************************************
         # // exactBPTInForTokensOut                                                                    //
         # // (per token)                                                                               //

@@ -4,6 +4,7 @@ Data structures for chains.
 
 from enum import Enum
 
+
 class Chain(Enum):
     MAINNET = "MAINNET"
     GNOSIS = "GNOSIS"

@@ -29,14 +29,13 @@ from web3.gas_strategies.time_based import (
 )
 from web3.middleware import geth_poa_middleware
 
-from third_party.balpy.balpy.enums.types import Chain, SwapType
-
 # balpy modules
 from . import balancerErrors as be
 from .enums.stablePoolJoinExitKind import StablePhantomPoolJoinKind
+from .enums.types import Chain, SwapType
 from .enums.weightedPoolJoinExitKind import WeightedPoolExitKind, WeightedPoolJoinKind
+from .graph.graph import BALANCER_API_ENDPOINT, DEFAULT_SWAP_OPTIONS, TheGraph
 
-BALANCER_API_ENDPOINT = "https://api-v3.balancer.fi/"
 
 class Suppressor(object):
     def __enter__(self):
@@ -163,7 +162,7 @@ class balpy(object):
             "id": 8453,
             "blockExplorerUrl": "basescan.org",
             "balFrontend": "app.balancer.fi/#/base",
-        }
+        },
     }
 
     apiEndpoint = BALANCER_API_ENDPOINT
@@ -335,7 +334,6 @@ class balpy(object):
         usingCustomConfig = customConfigFile is not None
         customConfig = None
         if usingCustomConfig:
-
             # load custom config file if it exists, quit if not
             if not os.path.isfile(customConfigFile):
                 self.ERROR(
@@ -431,6 +429,10 @@ class balpy(object):
 
         print()
         print("==============================================================")
+
+        self.graph = TheGraph(
+            network, customUrl=BALANCER_API_ENDPOINT, usingJsonEndpoint=True
+        )
 
     # ======================
     # ====Color Printing====
@@ -582,7 +584,6 @@ class balpy(object):
 
     @cache
     def erc20GetDecimals(self, tokenAddress):
-
         # keep the manually maintained cache since the
         # multicaller function can populate it too
         if tokenAddress in self.decimals.keys():
@@ -1771,7 +1772,6 @@ class balpy(object):
         gasEstimateOverride=-1,
         gasPriceGweiOverride=-1,
     ):
-
         if poolDescription["poolType"] in [
                 "AaveLinearPool", "ERC4626LinearPool"]:
             slippageTolerancePercent = 1
@@ -1826,7 +1826,6 @@ class balpy(object):
         gasEstimateOverride=-1,
         gasPriceGweiOverride=-1,
     ):
-
         phantomBptAddress = self.balPooldIdToAddress(poolId)
 
         batchSwap = {}
@@ -2414,7 +2413,6 @@ class balpy(object):
 
     @cache
     def balPoolGetAbi(self, poolType):
-
         if poolType == "HighAmpComposableStable":
             poolType = "ComposableStable"
 
@@ -2968,7 +2966,6 @@ class balpy(object):
         swapsDescription = copy.deepcopy(originalSwapsDescription)
         vault = self.balLoadContract("Vault")
         for swapDescription in swapsDescription:
-
             # do deep copy to avoid modifying the swapDescription in place,
             # breaking index remappings
             deepCopySwapDescription = copy.deepcopy(swapDescription)
@@ -3048,15 +3045,10 @@ class balpy(object):
         )
 
     def balSorQuery(self, data):
-
         query = data["sor"]
 
         # scale amount based on input/output
-        token_for_decimals = query["orderKind"].lower() + "Token"
-        amount_scaled = self.erc20ScaleDecimalsWei(
-            query[token_for_decimals], query["amount"]
-        )
-        query["amount"] = int(amount_scaled)
+        query["orderKind"].lower() + "Token"
 
         # get gas price if not provided
         if "gasPrice" not in query.keys():
@@ -3068,28 +3060,31 @@ class balpy(object):
         # API gets grumpy when you send it numbers. Send everything as a string
         for field in query:
             query[field] = str(query[field])
-        # breakpoint()
 
-        response = requests.post(
-            self.balGetApiEndpointSor(),
-            headers={"Content-Type": "application/json"},
-            data=json.dumps(query),
+        response = self.graph.getSorGetSwapPaths(
+            chain=self.network,
+            swapAmount=query["amount"],
+            tokenIn=query["sellToken"],
+            tokenOut=query["buyToken"],
+            swapType=SwapType.EXACT_IN.value,
         )
 
-        batch_swap = self.balSorResponseToBatchSwapFormat(
-            data, response.json())
+        batch_swap = self.balSorResponseToBatchSwapFormat(data, response)
+
+        batch_swap["returnAmount"] = response["returnAmount"]
 
         return batch_swap
 
-    def _getSorGetSwapPaths(self,
-                           chain: Chain,
-                           swapAmount: float,
-                           tokenIn: str,
-                           tokenOut: str,
-                           swapType: SwapType = SwapType.EXACT_IN,
-                           swapOptions: dict = None,
-                           queryBatchSwap: bool = True,
-                           ):
+    def _getSorGetSwapPaths(
+        self,
+        chain: Chain,
+        swapAmount: float,
+        tokenIn: str,
+        tokenOut: str,
+        swapType: SwapType = SwapType.EXACT_IN,
+        swapOptions: dict = None,
+        queryBatchSwap: bool = True,
+    ):
         """
         Calls the SOR api from the Balancer to get swap paths.
         Args:
@@ -3102,7 +3097,7 @@ class balpy(object):
             queryBatchSwap (bool, optional): Whether to query batch swap. Defaults to True.
         Returns:
             dict: The response from the SOR.
-        
+
         """
         if not swapOptions:
             swapOptions = DEFAULT_SWAP_OPTIONS
@@ -3134,7 +3129,7 @@ class balpy(object):
                   assetInIndex,
                   poolId
                 }
-              
+
               returnAmount,
               tokenInAmount,
               tokenOutAmount,
@@ -3148,13 +3143,17 @@ class balpy(object):
             "swapAmount": swapAmount,
             "tokenIn": tokenIn,
             "tokenOut": tokenOut,
-            "swapType": swapType,
+            "swapType": swapType.value,
             "queryBatchSwap": queryBatchSwap,
         }
 
-        response = requests.post(BALANCER_API_ENDPOINT, json={"query": query_string, "variables": params})
+        response = requests.post(
+            BALANCER_API_ENDPOINT, json={
+                "query": query_string, "variables": params}
+        )
 
-        return response.json()['data']['sorGetSwapPaths']
+        return response.json()["data"]["sorGetSwapPaths"]
+
     def balSorResponseToBatchSwapFormat(self, query, response):
         sor = query["sor"]
         del query["sor"]
@@ -3401,7 +3400,7 @@ class balpy(object):
         contracts = ["Contracts", contractDashLine] + contracts
         addresses = ["Addresses", addressDashLine] + addresses
 
-        for (c, a) in zip(contracts, addresses):
+        for c, a in zip(contracts, addresses):
             cPadded = padWithSpaces(c, longestContractStringLength)
             aPadded = padWithSpaces(a, longestAddressStringLength)
             line = "| " + cPadded + " | " + aPadded + " |\n"
