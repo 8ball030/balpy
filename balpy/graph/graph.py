@@ -303,6 +303,7 @@ class TheGraph(object):
         swapType: str = SwapType.EXACT_IN.value,
         swapOptions: dict = None,
         queryBatchSwap: bool = True,
+        retries: int = 3,
     ):
         """
         Calls the SOR api from the Balancer to get swap paths.
@@ -370,7 +371,20 @@ class TheGraph(object):
             BALANCER_API_ENDPOINT, json={
                 "query": query_string, "variables": params}
         )
-        print(response.content)
+        if response.status_code != 200:
+            if "banned" in response.text and retries > 0:
+                # We sleep for 5 seconds to avoid being banned
+                time.sleep(5)
+                print   (
+                    "We got banned from the Balancer API. Sleeping for 5 seconds."
+                )
+                return self.getSorGetSwapPaths(
+                    chain, swapAmount, tokenIn, tokenOut, swapType, swapOptions, queryBatchSwap
+                )
+
+            raise Exception(
+                f"Error querying the Balancer API: {response.text} {response.status_code}"
+            )
 
         return response.json()["data"]["sorGetSwapPaths"]
 
