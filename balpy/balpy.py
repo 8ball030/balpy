@@ -29,7 +29,6 @@ from web3.gas_strategies.time_based import (
 )
 from web3.middleware import geth_poa_middleware
 
-from .enums.types import Chain, SwapType
 # balpy modules
 from . import balancerErrors as be
 from .enums.stablePoolJoinExitKind import StablePhantomPoolJoinKind
@@ -3039,11 +3038,6 @@ class balpy(object):
         else:
             return ""
 
-    def balGetApiEndpointSor(self):
-        return os.path.join(
-            self.apiEndpoint, "sor", str(
-                self.networkParams[self.network]["id"])
-        )
 
     def balSorQuery(self, data):
         query = data["sor"]
@@ -3148,6 +3142,7 @@ class balpy(object):
             "queryBatchSwap": queryBatchSwap,
         }
 
+        
         response = requests.post(
             BALANCER_API_ENDPOINT, json={
                 "query": query_string, "variables": params}
