@@ -10,7 +10,6 @@ import balpy
 
 
 def main():
-
     if len(sys.argv) < 2:
         print("Usage: python3", sys.argv[0], "/path/to/pool.json")
         quit()

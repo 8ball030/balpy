@@ -13,12 +13,12 @@ from gql.transport.requests import RequestsHTTPTransport
 
 from balpy.enums.types import Chain, SwapType
 
-from balpy.balpy import BALANCER_API_ENDPOINT
-
 DEFAULT_SWAP_OPTIONS = {
     "maxPools": 4,
     "queryBatchSwap": True,
 }
+
+BALANCER_API_ENDPOINT = "https://api-v3.balancer.fi/"
 
 
 class TheGraph(object):
@@ -47,7 +47,6 @@ class TheGraph(object):
         print(json.dumps(curr_dict, indent=4))
 
     def callCustomEndpoint(self, query):
-
         query = query.replace("\n", " ")
         query = query.replace("\t", "")
         queryDict = {"query": query}
@@ -94,7 +93,6 @@ class TheGraph(object):
             print("Successfully initialized on network:", self.network)
 
     def getPoolTokens(self, pool_id, verbose=False):
-
         self.assertInit()
 
         if verbose:
@@ -126,7 +124,6 @@ class TheGraph(object):
         return response["poolTokens"]
 
     def getNumPools(self, verbose=False):
-
         self.assertInit()
         if verbose:
             print("Querying number of pools...")
@@ -155,7 +152,6 @@ class TheGraph(object):
         return None
 
     def getPools(self, batch_size, skips, verbose=False):
-
         self.assertInit()
         if verbose:
             print(
@@ -189,7 +185,6 @@ class TheGraph(object):
         return response
 
     def getV2Pools(self, batch_size, verbose=False):
-
         if self.client is None:
             self.initBalV2Graph(verbose=verbose)
 
@@ -216,7 +211,6 @@ class TheGraph(object):
         return pool_tokens
 
     def getV2PoolIDs(self, batch_size, pool_filter=None, verbose=False):
-
         if self.client is None:
             self.initBalV2Graph(verbose=verbose)
 
@@ -252,7 +246,6 @@ class TheGraph(object):
         return data
 
     def getPoolBptPriceEstimate(self, poolId, verbose=False):
-
         self.assertInit()
         if verbose:
             print("Getting data for pool", poolId, "from the subgraph...")
@@ -301,15 +294,17 @@ class TheGraph(object):
             response = self.client.execute(gql(formatted_query_string))
         return response
 
-    def getSorGetSwapPaths(self,
-                           chain: Chain,
-                           swapAmount: float,
-                           tokenIn: str,
-                           tokenOut: str,
-                           swapType: SwapType = SwapType.EXACT_IN,
-                           swapOptions: dict = None,
-                           queryBatchSwap: bool = True,
-                           ):
+    def getSorGetSwapPaths(
+        self,
+        chain: Chain,
+        swapAmount: float,
+        tokenIn: str,
+        tokenOut: str,
+        swapType: str = SwapType.EXACT_IN.value,
+        swapOptions: dict = None,
+        queryBatchSwap: bool = True,
+        retries: int = 3,
+    ):
         """
         Calls the SOR api from the Balancer to get swap paths.
         Args:
@@ -322,7 +317,7 @@ class TheGraph(object):
             queryBatchSwap (bool, optional): Whether to query batch swap. Defaults to True.
         Returns:
             dict: The response from the SOR.
-        
+
         """
         if not swapOptions:
             swapOptions = DEFAULT_SWAP_OPTIONS
@@ -354,7 +349,7 @@ class TheGraph(object):
                   assetInIndex,
                   poolId
                 }
-              
+
               returnAmount,
               tokenInAmount,
               tokenOutAmount,
@@ -364,7 +359,7 @@ class TheGraph(object):
             }
         """
         params = {
-            "chain": chain,
+            "chain": chain.upper(),
             "swapAmount": swapAmount,
             "tokenIn": tokenIn,
             "tokenOut": tokenOut,
@@ -372,54 +367,52 @@ class TheGraph(object):
             "queryBatchSwap": queryBatchSwap,
         }
 
-        response = requests.post(BALANCER_API_ENDPOINT, json={"query": query_string, "variables": params})
+        response = requests.post(
+            BALANCER_API_ENDPOINT, json={
+                "query": query_string, "variables": params}
+        )
+        if response.status_code != 200:
+            if "banned" in response.text and retries > 0:
+                # We sleep for 5 seconds to avoid being banned
+                time.sleep(5)
+                print   (
+                    "We got banned from the Balancer API. Sleeping for 5 seconds."
+                )
+                return self.getSorGetSwapPaths(
+                    chain, swapAmount, tokenIn, tokenOut, swapType, swapOptions, queryBatchSwap
+                )
 
-        return response.json()['data']['sorGetSwapPaths']
+            raise Exception(
+                f"Error querying the Balancer API: {response.text} {response.status_code}"
+            )
+
+        return response.json()["data"]["sorGetSwapPaths"]
+
 
 def main():
+    network = Chain.GNOSIS.value
 
-    batch_size = 30
-    print()
-
-    if len(sys.argv) < 2:
-        print("Usage: python", sys.argv[0], "<network>")
-        print("No network given; defaulting to mainnet Ethereum")
-        network = "mainnet"
-    else:
-        network = sys.argv[1]
-
-    networks = ["mainnet", "kovan", "polygon", "arbitrum", "gnosis"]
-
-    if network not in networks:
-        print("Network", network, "is not supported!")
-        print("Supported networks are:")
-        for n in networks:
-            print("\t" + n)
-        print("Quitting")
-        quit()
-
-    verbose = True
-
-    graph = TheGraph(network, customUrl=BALANCER_API_ENDPOINT, usingJsonEndpoint=True)
-    # pools = graph.getNumPools(verbose=verbose)
-    # pools = graph.getV2Pools(batch_size, verbose=verbose)
-    # graph.printJson(pools)
-
+    graph = TheGraph(
+        network,
+        customUrl=BALANCER_API_ENDPOINT,
+        usingJsonEndpoint=True)
 
     for i in range(0, 10):
         config = {
-            "chain": Chain.GNOSIS.value,
-            "swapAmount": str(50.00 * (1 + i ** 3)),
+            "chain": network,
+            "swapAmount": str(50.00 * (1 + i**3)),
             "swapType": "EXACT_IN",
             # "tokenOut": "0xcE11e14225575945b8E6Dc0D4F2dD4C570f79d9f",
             # "tokenIn": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
             "tokenIn": "0xcE11e14225575945b8E6Dc0D4F2dD4C570f79d9f",
             "tokenOut": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
         }
-    
+
         paths = graph.getSorGetSwapPaths(**config)
-        rate = paths['effectivePrice']
-        print( f"{1 / float(rate) } for 1 {config['tokenIn']} to {config['tokenOut']} size: {config['swapAmount']} output: {paths['returnAmount']}")
+        rate = paths["effectivePrice"]
+        print(
+            f"{1 / float(rate) } for 1 {config['tokenIn']} to {config['tokenOut']} size: {config['swapAmount']} output: {paths['returnAmount']}"
+        )
 
 
 if __name__ == "__main__":

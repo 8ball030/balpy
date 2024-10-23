@@ -187,7 +187,6 @@ class TestStableMath(unittest.TestCase):
 
     # TODO give critical results
     def test_getTokenBalanceGivenInvariantAndAllOtherBalances(stablemath_test):
-
         # assert StableMath.getTokenBalanceGivenInvariantAndAllOtherBalances(22, [2,3,4,20], 1, 2) == 0.002573235526125192
 
         # self.assertAlmostEqual(

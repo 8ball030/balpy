@@ -17,7 +17,6 @@ class WeightedMath:
     @staticmethod
     def calculate_invariant(
             normalized_weights: List[Decimal], balances: List[Decimal]):
-
         # /**********************************************************************************************
         # // invariant               _____                                                             //
         # // wi = weight index i      | |      wi                                                      //
@@ -40,7 +39,6 @@ class WeightedMath:
         weight_out: Decimal,
         amount_in: Decimal,
     ) -> Decimal:
-
         # /**********************************************************************************************
         # // outGivenIn                                                                                //
         # // aO = amountOut                                                                            //
@@ -69,7 +67,6 @@ class WeightedMath:
         weight_out: Decimal,
         amount_out: Decimal,
     ):
-
         # /**********************************************************************************************
         # // inGivenOut                                                                                //
         # // aO = amount_out                                                                            //
@@ -95,7 +92,6 @@ class WeightedMath:
         bptTotalSupply: Decimal,
         swap_fee: Decimal,
     ):
-
         balance_ratios_with_fee = [None] * len(amounts_in)
         invariant_ratio_with_fees = 0
         for i in range(len(balances)):
@@ -142,7 +138,6 @@ class WeightedMath:
         bpt_total_supply: Decimal,
         swap_fee: Decimal,
     ) -> Decimal:
-
         # /******************************************************************************************
         # // tokenInForExactBPTOut                                                                 //
         # // a = amountIn                                                                          //
@@ -176,7 +171,6 @@ class WeightedMath:
         bpt_total_supply: Decimal,
         swap_fee: Decimal,
     ) -> Decimal:
-
         balance_ratios_without_fee = [Decimal(0)] * len(amounts_out)
         invariant_ratio_without_fees = Decimal(0)
         for i in range(len(balances)):
@@ -219,7 +213,6 @@ class WeightedMath:
         bpt_total_supply: Decimal,
         swap_fee: Decimal,
     ) -> Decimal:
-
         # /*****************************************************************************************
         # // exactBPTInForTokenOut                                                                //
         # // a = amountOut                                                                        //
@@ -247,7 +240,6 @@ class WeightedMath:
     def calc_tokens_out_given_exact_bpt_in(
         balances: List[Decimal], bpt_amount_in: Decimal, total_bpt: Decimal
     ) -> List:
-
         # /**********************************************************************************************
         # // exactBPTInForTokensOut                                                                    //
         # // (per token)                                                                               //
@@ -271,7 +263,6 @@ class WeightedMath:
         current_invariant: Decimal,
         protocol_swap_fee_percentage: Decimal,
     ) -> Decimal:
-
         # /*********************************************************************************
         # /*  protocol_swap_fee_percentage * balanceToken * ( 1 - (previous_invariant / current_invariant) ^ (1 / weightToken))
         # *********************************************************************************/

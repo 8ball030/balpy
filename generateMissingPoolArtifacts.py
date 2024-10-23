@@ -3,7 +3,6 @@ import os
 
 
 def main():
-
     deprecated_string = ""
     for i in range(2):
         # Traverse all deprecated tasks
@@ -27,7 +26,6 @@ def main():
 
             for f in files:
                 if "pool" in f.lower() and "factory" in f.lower():
-
                     # Check to see if there is an artifact for the pool AND the
                     # factory
                     print("\tFound factory:", f)
