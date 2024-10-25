@@ -3064,11 +3064,7 @@ class balpy(object):
             swapType=SwapType.EXACT_IN.value,
         )
 
-        batch_swap = self.balSorResponseToBatchSwapFormat(data, response)
-
-        batch_swap["returnAmount"] = response["returnAmount"]
-
-        return batch_swap
+        return response
 
     def _getSorGetSwapPaths(
         self,
