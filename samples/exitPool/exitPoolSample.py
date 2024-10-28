@@ -2,9 +2,8 @@ import json
 import os
 import sys
 
-import jstyleson
-
 import balpy
+import jstyleson
 
 
 def main():

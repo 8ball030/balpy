@@ -1,9 +1,8 @@
 import os
 import sys
 
-import jstyleson
-
 import balpy
+import jstyleson
 
 
 def main():
@@ -73,10 +72,7 @@ def main():
     print("==============================================================")
     print()
 
-    txHash = bal.balDoBatchSwap(
-        swap,
-        gasFactor=gasFactor,
-        gasPriceSpeed=gasSpeedTrade)
+    txHash = bal.balDoBatchSwap(swap, gasFactor=gasFactor, gasPriceSpeed=gasSpeedTrade)
 
     print("Batch Swap Txn Hash: ", txHash)
 

@@ -1,9 +1,8 @@
 import json
 import time
 
-import requests
-
 import balpy
+import requests
 
 
 def main():
