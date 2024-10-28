@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "open-balpy"
-version = "0.0.5"
+version = "0.0.6"
 description = "Balancer V2 Python API"
 authors = ["Greg <greg@orb.cl>", "8baller <8baller@station.codes>"]
 readme = "README.md"
