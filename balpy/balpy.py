@@ -3147,6 +3147,9 @@ class balpy(object):
         return response.json()["data"]["sorGetSwapPaths"]
 
     def balSorResponseToBatchSwapFormat(self, query, response):
+
+        query = copy.deepcopy(query)
+
         sor = query["sor"]
         del query["sor"]
 
