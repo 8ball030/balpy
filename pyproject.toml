@@ -3,6 +3,7 @@ name = "open-balpy"
 version = "0.0.5"
 description = "Balancer V2 Python API"
 authors = ["Greg <greg@orb.cl>", "8baller <8baller@station.codes>"]
+readme = "README.md"
 license = "GNU GPL 3"
 packages = [
     { include = "balpy", from = "." },
