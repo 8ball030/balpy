@@ -388,6 +388,36 @@ class TheGraph(object):
 
         return response.json()["data"]["sorGetSwapPaths"]
 
+    def getCurrentPrices(
+            self,
+            chain: Chain,
+            cooldown: int = 5,
+            retries: int = 0,
+    ):
+        """
+        get the current prices of all pools
+        """
+        query = """
+        query GetTokenCurrentPrices($chains: [GqlChain!]) {
+          tokenGetCurrentPrices(chains: $chains) {
+            price
+            address
+          }
+        }
+        """
+        response = requests.post(
+            BALANCER_API_ENDPOINT, json={
+                "query": query, 
+                "variables": {"chains": [chain.upper()]}
+            }
+        )
+        if response.status_code in [429, 500]:
+            timeout = cooldown * (retries + 1)
+            print(f"We got banned from the Balancer API. Sleeping for {timeout} seconds.")
+            time.sleep(timeout)
+            return self.getCurrentPrices(chain, cooldown, retries + 1)
+        return response.json()["data"]["tokenGetCurrentPrices"]
+
 
 def main():
     network = Chain.GNOSIS.value
