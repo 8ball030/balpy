@@ -11,6 +11,7 @@ class Chain(Enum):
     BASE = "BASE"
     OPTIMISM = "OPTIMISM"
     ARBITRUM = "ARBITRUM"
+    MODE = "MODE"
 
 
 class SwapType(Enum):

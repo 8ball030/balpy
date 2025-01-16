@@ -163,6 +163,12 @@ class balpy(object):
             "blockExplorerUrl": "basescan.org",
             "balFrontend": "app.balancer.fi/#/base",
         },
+        "mode": {
+            "id": 34443,
+            "blockExplorerUrl": "modescan.io",
+            "balFrontend": "app.balancer.fi/#/mode",
+        },
+
     }
 
     apiEndpoint = BALANCER_API_ENDPOINT
