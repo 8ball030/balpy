@@ -2933,8 +2933,11 @@ class balpy(object):
             decimals = self.erc20GetDecimals(sortedTokens[idxTokenAmount])
             amount = int(Decimal(swap["amount"]) * Decimal(10 ** (decimals)))
 
+            # convert poolId from address to bytes32
+            pool_id_bytes = eth_abi.encode(["address"], [swap["poolId"]])
+
             swapsTuple = (
-                swap["poolId"],
+                pool_id_bytes,
                 idxSortedIn,
                 idxSortedOut,
                 amount,
@@ -3072,85 +3075,70 @@ class balpy(object):
 
         return response
 
-    def _getSorGetSwapPaths(
-        self,
-        chain: Chain,
-        swapAmount: float,
-        tokenIn: str,
-        tokenOut: str,
-        swapType: SwapType = SwapType.EXACT_IN,
-        swapOptions: dict = None,
-        queryBatchSwap: bool = True,
-    ):
+    def balSorQueryCalldata(self, data: dict) -> dict:
         """
-        Calls the SOR api from the Balancer to get swap paths.
+        Query SOR for calldata
+
         Args:
-            chain (Chain): The chain to query.
-            swapAmount (float): The amount to swap.
-            tokenIn (str): The token to swap in.
-            tokenOut (str): The token to swap out.
-            swapType (SwapType, optional): The type of swap. Defaults to SwapType.EXACT_IN.
-            swapOptions (dict, optional): The options for the swap. Defaults to None.
-            queryBatchSwap (bool, optional): Whether to query batch swap. Defaults to True.
-        Returns:
-            dict: The response from the SOR.
+            data (dict): Configuration data containing:
+                - sor (dict): SOR query parameters including:
+                    - amount (float): Human-readable swap amount
+                    - sellToken (str): Token to sell
+                    - buyToken (str): Token to buy
+                    - orderKind (str): "buy" or "sell"
+                - slippageTolerancePercent (float): Slippage tolerance in percent
+                - deadline (int): Transaction deadline timestamp
 
+        Returns: 
+            dict: Transaction data containing:
+            - to (str): Target Vault contract address
+            - data (str): ABI-encoded calldata for the swap
+            - value (int): ETH value to send (0 for token swaps)
+            - minOut (int): Minimum output account in wei after slippage
+            - tokens (list): Array of token addresses for the index mapping
         """
-        if not swapOptions:
-            swapOptions = DEFAULT_SWAP_OPTIONS
-            swapOptions["timestamp"] = int(time.time())
-        query_string = """
-          query sorGetSwapPaths(
-            $chain: GqlChain!,
-            $swapAmount: AmountHumanReadable!,
-            $queryBatchSwap: Boolean!,
-            $swapType: GqlSorSwapType!,
-            $tokenIn: String!,
-            $tokenOut: String!,
-            $callDataInput: GqlSwapCallDataInput,
-            $useProtocolVersion: Int
-          ) {
-            sorGetSwapPaths(
-              chain: $chain,
-              swapAmount: $swapAmount,
-              queryBatchSwap: $queryBatchSwap,
-              swapType: $swapType,
-              tokenIn: $tokenIn,
-              tokenOut: $tokenOut,
-              callDataInput: $callDataInput,
-              useProtocolVersion: $useProtocolVersion
-            ) {
-              swaps {
-                  assetOutIndex,
-                  amount,
-                  assetInIndex,
-                  poolId
-                }
-
-              returnAmount,
-              tokenInAmount,
-              tokenOutAmount,
-              effectivePrice,
-              tokenAddresses
-            }
-            }
-        """
-        params = {
-            "chain": chain,
-            "swapAmount": swapAmount,
-            "tokenIn": tokenIn,
-            "tokenOut": tokenOut,
-            "swapType": swapType.value,
-            "queryBatchSwap": queryBatchSwap,
-        }
-
+        query = data["sor"] 
         
-        response = requests.post(
-            BALANCER_API_ENDPOINT, json={
-                "query": query_string, "variables": params}
+        # API gets grumpy when you send it numbers. Send everything as a string
+        for field in query:
+            query[field] = str(query[field])
+
+        response = self.graph.getSorGetSwapPaths(
+            chain=self.network,
+            swapAmount=query["amount"],               # human readable string
+            tokenIn=query["sellToken"],
+            tokenOut=query["buyToken"],
+            swapType=SwapType.EXACT_IN.value
         )
 
-        return response.json()["data"]["sorGetSwapPaths"]
+        if not response["swaps"]:
+            self.ERROR("SOR returned no viable route")
+            return None
+
+        q = {
+            "sor": query,
+            "slippageTolerancePercent": data["slippageTolerancePercent"],
+            "batchSwap": {
+                "funds": {
+                    "sender":     self.address,
+                    "recipient":  self.address,
+                    "fromInternalBalance": False,
+                    "toInternalBalance":   False,
+                },
+                "deadline": data["batchSwap"]["deadline"]
+            }
+        }
+        batch_swap = self.balSorResponseToBatchSwapFormat(q, response)["batchSwap"]
+
+        fn   = self.balCreateFnBatchSwap(batch_swap)
+        data = fn._encode_transaction_data()
+
+        return {
+            "to":     self.deploymentAddresses["Vault"],
+            "data":   data,
+            "value":  0,                       # SOR handles ETH wrapping separately
+            "tokens": batch_swap["assets"],    # index map for UI/debug
+        }
 
     def balSorResponseToBatchSwapFormat(self, query, response):
 
@@ -3182,7 +3170,16 @@ class balpy(object):
                 self.erc20ScaleDecimalsStandard(asset, step["amount"])
             )
 
-        query_results = self.balQueryBatchSwap(query["batchSwap"])
+        # Create a simple result structure that works with the SOR API Format
+        query_results = {}
+        for i, asset in enumerate(query["batchSwap"]["assets"]):
+            chk_asset = self.web3.to_checksum_address(asset)
+            if i == 0:  # Input token
+                query_results[chk_asset] = -float(sor["amount"])  # Negative for input
+            elif i == len(query["batchSwap"]["assets"]) - 1:  # Output token
+                query_results[chk_asset] = float(response["returnAmount"])  # Positive for output
+            else:  # Intermediate tokens
+                query_results[chk_asset] = 0.0  # No net change for intermediate tokens
 
         idx = 0
         for a in query["batchSwap"]["assets"]:
