@@ -360,7 +360,7 @@ class TheGraph(object):
             "tokenIn": tokenIn,
             "tokenOut": tokenOut,
             "swapType": swapType,
-            "queryBatchSwap": queryBatchSwap,
+            "useProtocolVersion": 2
         }
 
         response = requests.post(
