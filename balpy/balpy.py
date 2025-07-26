@@ -2933,11 +2933,8 @@ class balpy(object):
             decimals = self.erc20GetDecimals(sortedTokens[idxTokenAmount])
             amount = int(Decimal(swap["amount"]) * Decimal(10 ** (decimals)))
 
-            # convert poolId from address to bytes32
-            pool_id_bytes = eth_abi.encode(["address"], [swap["poolId"]])
-
             swapsTuple = (
-                pool_id_bytes,
+                swap["poolId"],
                 idxSortedIn,
                 idxSortedOut,
                 amount,
@@ -3170,16 +3167,17 @@ class balpy(object):
                 self.erc20ScaleDecimalsStandard(asset, step["amount"])
             )
 
+        query_results = self.balQueryBatchSwap(query["batchSwap"])
         # Create a simple result structure that works with the SOR API Format
-        query_results = {}
-        for i, asset in enumerate(query["batchSwap"]["assets"]):
-            chk_asset = self.web3.to_checksum_address(asset)
-            if i == 0:  # Input token
-                query_results[chk_asset] = -float(sor["amount"])  # Negative for input
-            elif i == len(query["batchSwap"]["assets"]) - 1:  # Output token
-                query_results[chk_asset] = float(response["returnAmount"])  # Positive for output
-            else:  # Intermediate tokens
-                query_results[chk_asset] = 0.0  # No net change for intermediate tokens
+        # query_results = {}
+        # for i, asset in enumerate(query["batchSwap"]["assets"]):
+        #     chk_asset = self.web3.to_checksum_address(asset)
+        #     if i == 0:  # Input token
+        #         query_results[chk_asset] = -float(sor["amount"])  # Negative for input
+        #     elif i == len(query["batchSwap"]["assets"]) - 1:  # Output token
+        #         query_results[chk_asset] = float(response["returnAmount"])  # Positive for output
+        #     else:  # Intermediate tokens
+        #         query_results[chk_asset] = 0.0  # No net change for intermediate tokens
 
         idx = 0
         for a in query["batchSwap"]["assets"]:
