@@ -3095,6 +3095,8 @@ class balpy(object):
             - tokens (list): Array of token addresses for the index mapping
         """
         query = data["sor"] 
+
+        sender_address = data["batchSwap"]["funds"]["sender"]
         
         # API gets grumpy when you send it numbers. Send everything as a string
         for field in query:
@@ -3117,8 +3119,8 @@ class balpy(object):
             "slippageTolerancePercent": data["slippageTolerancePercent"],
             "batchSwap": {
                 "funds": {
-                    "sender":     self.address,
-                    "recipient":  self.address,
+                    "sender":     sender_address,
+                    "recipient":  sender_address,
                     "fromInternalBalance": False,
                     "toInternalBalance":   False,
                 },
