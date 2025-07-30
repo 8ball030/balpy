@@ -3170,16 +3170,6 @@ class balpy(object):
             )
 
         query_results = self.balQueryBatchSwap(query["batchSwap"])
-        # Create a simple result structure that works with the SOR API Format
-        # query_results = {}
-        # for i, asset in enumerate(query["batchSwap"]["assets"]):
-        #     chk_asset = self.web3.to_checksum_address(asset)
-        #     if i == 0:  # Input token
-        #         query_results[chk_asset] = -float(sor["amount"])  # Negative for input
-        #     elif i == len(query["batchSwap"]["assets"]) - 1:  # Output token
-        #         query_results[chk_asset] = float(response["returnAmount"])  # Positive for output
-        #     else:  # Intermediate tokens
-        #         query_results[chk_asset] = 0.0  # No net change for intermediate tokens
 
         idx = 0
         for a in query["batchSwap"]["assets"]:
