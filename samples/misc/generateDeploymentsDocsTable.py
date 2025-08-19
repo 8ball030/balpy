@@ -1,10 +1,10 @@
-import balpy
+from balpy.balpy import balpy
 
 
 def main():
     network = "kovan"
 
-    bal = balpy.balpy.balpy(network)
+    bal = balpy(network)
     output = bal.generateDeploymentsDocsTable()
     print(output)
 
