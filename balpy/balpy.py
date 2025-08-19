@@ -32,9 +32,9 @@ from web3.middleware import geth_poa_middleware
 # balpy modules
 from . import balancerErrors as be
 from .enums.stablePoolJoinExitKind import StablePhantomPoolJoinKind
-from .enums.types import Chain, SwapType
+from .enums.types import SwapType
 from .enums.weightedPoolJoinExitKind import WeightedPoolExitKind, WeightedPoolJoinKind
-from .graph.graph import BALANCER_API_ENDPOINT, DEFAULT_SWAP_OPTIONS, TheGraph
+from .graph.graph import BALANCER_API_ENDPOINT, TheGraph
 
 
 class Suppressor(object):
@@ -2988,7 +2988,7 @@ class balpy(object):
                 - slippageTolerancePercent (float): Slippage tolerance in percent
                 - deadline (int): Transaction deadline timestamp
 
-        Returns: 
+        Returns:
             dict: Transaction data containing:
             - to (str): Target Vault contract address
             - data (str): ABI-encoded calldata for the swap
@@ -2996,20 +2996,20 @@ class balpy(object):
             - minOut (int): Minimum output account in wei after slippage
             - tokens (list): Array of token addresses for the index mapping
         """
-        query = data["sor"] 
+        query = data["sor"]
 
         sender_address = data["batchSwap"]["funds"]["sender"]
-        
+
         # API gets grumpy when you send it numbers. Send everything as a string
         for field in query:
             query[field] = str(query[field])
 
         response = self.graph.getSorGetSwapPaths(
             chain=self.network,
-            swapAmount=query["amount"],               # human readable string
+            swapAmount=query["amount"],  # human readable string
             tokenIn=query["sellToken"],
             tokenOut=query["buyToken"],
-            swapType=SwapType.EXACT_IN.value
+            swapType=SwapType.EXACT_IN.value,
         )
 
         if not response["swaps"]:
@@ -3021,24 +3021,24 @@ class balpy(object):
             "slippageTolerancePercent": data["slippageTolerancePercent"],
             "batchSwap": {
                 "funds": {
-                    "sender":     sender_address,
-                    "recipient":  sender_address,
+                    "sender": sender_address,
+                    "recipient": sender_address,
                     "fromInternalBalance": False,
-                    "toInternalBalance":   False,
+                    "toInternalBalance": False,
                 },
-                "deadline": data["batchSwap"]["deadline"]
-            }
+                "deadline": data["batchSwap"]["deadline"],
+            },
         }
         batch_swap = self.balSorResponseToBatchSwapFormat(q, response)["batchSwap"]
 
-        fn   = self.balCreateFnBatchSwap(batch_swap)
+        fn = self.balCreateFnBatchSwap(batch_swap)
         data = fn._encode_transaction_data()
 
         return {
-            "to":     self.deploymentAddresses["Vault"],
-            "data":   data,
-            "value":  0,                       # SOR handles ETH wrapping separately
-            "tokens": batch_swap["assets"],    # index map for UI/debug
+            "to": self.deploymentAddresses["Vault"],
+            "data": data,
+            "value": 0,  # SOR handles ETH wrapping separately
+            "tokens": batch_swap["assets"],  # index map for UI/debug
         }
 
     def balSorResponseToBatchSwapFormat(self, query, response):

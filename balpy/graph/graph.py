@@ -345,7 +345,7 @@ class TheGraph(object):
             "tokenIn": tokenIn,
             "tokenOut": tokenOut,
             "swapType": swapType,
-            "useProtocolVersion": 2
+            "useProtocolVersion": 2,
         }
 
         response = requests.post(
@@ -372,7 +372,7 @@ class TheGraph(object):
         response_json = response.json()
         if response_json.get("errors"):
             raise Exception(f"SOR GraphQL Error: {response_json.get('errors')}")
-        
+
         data = response_json.get("data", {}).get("sorGetSwapPaths")
         if not data:
             raise Exception("SOR GraphQL Error: No data returned")
