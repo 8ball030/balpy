@@ -169,8 +169,7 @@ class TestWeightedMath:
         expected = Decimal(0.107419197916188066)
         assert expectEqualWithError(result, expected)
 
-    def test_calc_due_token_protocol_swap_fee_amount_two_tokens(
-            weightedmath_test):
+    def test_calc_due_token_protocol_swap_fee_amount_two_tokens(weightedmath_test):
         # Returns protocl swap fees
         normalized_weights = [Decimal(0.3), Decimal(0.7)]
         balances = [Decimal(10), Decimal(11)]
@@ -208,8 +207,7 @@ class TestWeightedMath:
         expected = Decimal(0.439148057504926669190)
         assert expectEqualWithError(result, expected)
 
-    def test_calc_due_token_protocol_swap_fee_amount_three_tokens(
-            weightedmath_test):
+    def test_calc_due_token_protocol_swap_fee_amount_three_tokens(weightedmath_test):
         normalized_weights = [Decimal(0.3), Decimal(0.2), Decimal(0.5)]
         balances = [Decimal(10), Decimal(11), Decimal(12)]
         last_invariant = Decimal(10)

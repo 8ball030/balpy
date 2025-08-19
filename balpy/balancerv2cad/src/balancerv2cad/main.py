@@ -34,9 +34,7 @@ def run() -> None:
             ks.__version__,
         )
     except KeyError as error:
-        logger.error(
-            "Could not find %s in .env file. Please consult the README",
-            error)
+        logger.error("Could not find %s in .env file. Please consult the README", error)
         logger.info("Testing for %s@%s", ks.__package__, ks.__version__)
         logger.debug("Testing for %s@%s", ks.__package__, ks.__version__)
         logger.warning("Testing for %s@%s", ks.__package__, ks.__version__)

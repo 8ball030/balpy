@@ -1,11 +1,9 @@
 fmt: 
-	poetry run isort samples tests 
-	poetry run black samples tests
-	poetry run autopep8 samples tests --recursive --in-place -a
-	poetry run autoflake8 samples tests --recursive --remove-unused-variables --in-place
+	poetry run ruff format samples tests balpy
+	poetry run ruff format samples tests balpy
 
 lint: 
-	poetry run flake8 samples tests --max-line-length=150
+	poetry run ruff check samples tests balpy --fix
 
 test:
 	poetry run pytest tests

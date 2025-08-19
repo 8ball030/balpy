@@ -58,8 +58,7 @@ class PackageLogger:
             sys.exit(1)
 
     @staticmethod
-    def get_logger(name: Literal["production"]
-                   = DEFAULT_LOGGER_NAME) -> logging.Logger:
+    def get_logger(name: Literal["production"] = DEFAULT_LOGGER_NAME) -> logging.Logger:
         """
         Return a logger by name.
         Only logger names that are defined in the config
