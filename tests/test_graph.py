@@ -3,7 +3,6 @@ from balpy.graph.graph import main as endpoint_prices
 from samples.theGraph.getPoolIds import main as get_pool_ids
 from samples.theGraph.getPools import main as get_pools
 
-
 TEST_NETWORK = "gnosis-chain"
 
 

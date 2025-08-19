@@ -9,7 +9,12 @@ def printBalances(bal, tokens, address=None):
     for token in internalBalances.keys():
         internal = internalBalances[token]
         external = bal.erc20GetBalanceStandard(token, address)
-        print(token, "\t", "{:.18f}".format(internal), "\t", "{:.18f}".format(external))
+        print(
+            token,
+            "\t",
+            "{:.18f}".format(internal),
+            "\t",
+            "{:.18f}".format(external))
     print()
 
 
@@ -69,7 +74,12 @@ def main():
     printBalances(bal, tokens)
 
     amount = 5.0
-    print("Withdrawing", amount, "of token", token, "from internal balance...\n")
+    print(
+        "Withdrawing",
+        amount,
+        "of token",
+        token,
+        "from internal balance...\n")
     bal.balVaultDoManageUserBalance(
         bal.UserBalanceOpKind["WITHDRAW_INTERNAL"],
         token,
