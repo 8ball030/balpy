@@ -311,21 +311,17 @@ class TheGraph(object):
           query sorGetSwapPaths(
             $chain: GqlChain!,
             $swapAmount: AmountHumanReadable!,
-            $queryBatchSwap: Boolean!,
             $swapType: GqlSorSwapType!,
             $tokenIn: String!,
             $tokenOut: String!,
-            $callDataInput: GqlSwapCallDataInput,
             $useProtocolVersion: Int
           ) {
             sorGetSwapPaths(
               chain: $chain,
               swapAmount: $swapAmount,
-              queryBatchSwap: $queryBatchSwap,
               swapType: $swapType,
               tokenIn: $tokenIn,
               tokenOut: $tokenOut,
-              callDataInput: $callDataInput,
               useProtocolVersion: $useProtocolVersion
             ) {
               swaps {
@@ -349,7 +345,7 @@ class TheGraph(object):
             "tokenIn": tokenIn,
             "tokenOut": tokenOut,
             "swapType": swapType,
-            "queryBatchSwap": queryBatchSwap,
+            "useProtocolVersion": 2
         }
 
         response = requests.post(
@@ -373,8 +369,14 @@ class TheGraph(object):
             raise Exception(
                 f"Error querying the Balancer API: {response.text} {response.status_code}"
             )
-
-        return response.json()["data"]["sorGetSwapPaths"]
+        response_json = response.json()
+        if response_json.get("errors"):
+            raise Exception(f"SOR GraphQL Error: {response_json.get('errors')}")
+        
+        data = response_json.get("data", {}).get("sorGetSwapPaths")
+        if not data:
+            raise Exception("SOR GraphQL Error: No data returned")
+        return data
 
     def getCurrentPrices(
         self,
