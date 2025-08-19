@@ -17,8 +17,7 @@ class BalancerMathResult:
 class StableMath:
     # -------------------------------------
     @staticmethod
-    def calculateInvariant(amplificationParameter: Decimal,
-                           balances: list) -> Decimal:
+    def calculateInvariant(amplificationParameter: Decimal, balances: list) -> Decimal:
         # /**********************************************************************************************
         # // invariant                                                                                 //
         # // D = invariant                                                  D^(n+1)                    //
@@ -44,8 +43,7 @@ class StableMath:
             prevInvariant = invariant
 
             invariant = ceil(
-                ((num_tokens * invariant) * invariant +
-                 (ampTimesTotal * bal_sum) * P_D)
+                ((num_tokens * invariant) * invariant + (ampTimesTotal * bal_sum) * P_D)
                 / ((num_tokens + 1) * invariant + (ampTimesTotal - 1) * P_D)
             )
             if invariant > prevInvariant:
@@ -101,8 +99,7 @@ class StableMath:
                     )
                 )
 
-            swapFeeExcess = mulUp(
-                swapFee, Decimal(tokenBalancePercentageExcess))
+            swapFeeExcess = mulUp(swapFee, Decimal(tokenBalancePercentageExcess))
             amountOutBeforeFee = Decimal(
                 divUp(amountsOut[i], complement(swapFeeExcess))
             )
@@ -142,8 +139,7 @@ class StableMath:
         for i in range(len(balances)):
             currentWeight = divDown(Decimal(balances[i]), Decimal(sumBalances))
             tokenBalanceRatiosWithoutFee.append(
-                balances[i] + divDown(Decimal(amountsIn[i]),
-                                      Decimal(balances[i]))
+                balances[i] + divDown(Decimal(amountsIn[i]), Decimal(balances[i]))
             )
             weightedBalanceRatio = weightedBalanceRatio + mulDown(
                 tokenBalanceRatiosWithoutFee[i], currentWeight
@@ -203,15 +199,12 @@ class StableMath:
         )
 
         if balances[tokenIndex] > finalBalanceFeeToken:
-            accumulatedTokenSwapFees = balances[tokenIndex] - \
-                finalBalanceFeeToken
+            accumulatedTokenSwapFees = balances[tokenIndex] - finalBalanceFeeToken
         else:
             accumulatedTokenSwapFees = 0
 
         return divDown(
-            mulDown(
-                accumulatedTokenSwapFees,
-                Decimal(protocolSwapFeePercentage))
+            mulDown(accumulatedTokenSwapFees, Decimal(protocolSwapFeePercentage))
         )
 
     @staticmethod
@@ -234,8 +227,7 @@ class StableMath:
         # // P = product of final balances but x                                                                       //
         # **************************************************************************************************************/
         getcontext().prec = 28
-        invariant = StableMath.calculateInvariant(
-            amplificationParameter, balances)
+        invariant = StableMath.calculateInvariant(amplificationParameter, balances)
         balances[tokenIndexOut] = balances[tokenIndexOut] - tokenAmountOut
 
         finalBalanceIn = StableMath.getTokenBalanceGivenInvariantAndAllOtherBalances(
@@ -266,8 +258,7 @@ class StableMath:
         # // P = product of final balances but y                                                                       //
         # **************************************************************************************************************/
         print("Context", "OUTGIVENIN")
-        invariant = StableMath.calculateInvariant(
-            amplificationParameter, balances)
+        invariant = StableMath.calculateInvariant(amplificationParameter, balances)
         print("Invariant", invariant)
         balances[tokenIndexIn] = balances[tokenIndexIn] + tokenAmountIn
         finalBalanceOut = StableMath.getTokenBalanceGivenInvariantAndAllOtherBalances(

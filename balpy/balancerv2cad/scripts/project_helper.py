@@ -2,6 +2,7 @@
 Define functions as project "scripts" and run them via the
 pyproject.toml
 """
+
 import subprocess as sp
 import sys
 
@@ -18,10 +19,7 @@ def stub_gen() -> None:
     out_file = f"src/{ks.__package__}-stubs"
     path = str(ks.BASE_DIR / "src" / f"{ks.__package__}")
     try:
-        sp.run(
-            f"stubgen -p {ks.__package__} -o {out_file}",
-            check=True,
-            shell=True)
+        sp.run(f"stubgen -p {ks.__package__} -o {out_file}", check=True, shell=True)
         sp.run(f"mypy {path}", check=True, shell=True)
     except sp.CalledProcessError as error:
         print(f"{error}")

@@ -1,7 +1,6 @@
 # basics
 import json
 import math
-import sys
 import time
 
 # for customized endpoints
@@ -35,13 +34,10 @@ class TheGraph(object):
         https://thegraph.com/legacy-explorer/subgraph/balancer-labs/balancer-v2
     """
 
-    def __init__(self, network="mainnet", customUrl=None,
-                 usingJsonEndpoint=False):
+    def __init__(self, network="mainnet", customUrl=None, usingJsonEndpoint=False):
         super(TheGraph, self).__init__()
         self.network = network
-        self.initBalV2Graph(
-            customUrl=customUrl,
-            usingJsonEndpoint=usingJsonEndpoint)
+        self.initBalV2Graph(customUrl=customUrl, usingJsonEndpoint=usingJsonEndpoint)
 
     def printJson(self, curr_dict):
         print(json.dumps(curr_dict, indent=4))
@@ -85,8 +81,7 @@ class TheGraph(object):
         if customUrl is not None and not usingJsonEndpoint:
             graphUrl = customUrl
 
-        balancer_transport = RequestsHTTPTransport(
-            url=graphUrl, verify=True, retries=3)
+        balancer_transport = RequestsHTTPTransport(url=graphUrl, verify=True, retries=3)
         self.client = Client(transport=balancer_transport)
 
         if verbose:
@@ -154,13 +149,7 @@ class TheGraph(object):
     def getPools(self, batch_size, skips, verbose=False):
         self.assertInit()
         if verbose:
-            print(
-                "Querying pools #",
-                skips,
-                "through #",
-                skips +
-                batch_size,
-                "...")
+            print("Querying pools #", skips, "through #", skips + batch_size, "...")
 
         query_string = """
             query {{
@@ -173,8 +162,7 @@ class TheGraph(object):
               }}
             }}
             """
-        formatted_query_string = query_string.format(
-            first=batch_size, skip=skips)
+        formatted_query_string = query_string.format(first=batch_size, skip=skips)
         if self.client == "CUSTOM":
             response = self.callCustomEndpoint(formatted_query_string)
         else:
@@ -201,8 +189,7 @@ class TheGraph(object):
 
             for pool in response["pools"]:
                 curr_id = pool["id"]
-                curr_pool_token_data = self.getPoolTokens(
-                    curr_id, verbose=verbose)
+                curr_pool_token_data = self.getPoolTokens(curr_id, verbose=verbose)
                 pool_data = {}
                 pool_data["tokens"] = curr_pool_token_data
                 pool_data["poolType"] = pool["poolType"]
@@ -227,7 +214,7 @@ class TheGraph(object):
             for pool in response["pools"]:
                 if (
                     pool_filter is not None
-                    and not pool_filter.lower() in pool["poolType"].lower()
+                    and pool_filter.lower() not in pool["poolType"].lower()
                 ):
                     continue
                 if pool["poolType"] not in poolIdsByType.keys():
@@ -262,8 +249,7 @@ class TheGraph(object):
         response = self.client.execute(gql(formatted_query_string))
 
         pool = response["pools"][0]
-        pricePerBpt = float(pool["totalLiquidity"]) / \
-            float(pool["totalShares"])
+        pricePerBpt = float(pool["totalLiquidity"]) / float(pool["totalShares"])
 
         if verbose:
             print("Got price data:", pricePerBpt)
@@ -284,8 +270,7 @@ class TheGraph(object):
               }}
             }}
         """
-        formatted_query_string = query_string.format(
-            first=batch_size, skip=skips)
+        formatted_query_string = query_string.format(first=batch_size, skip=skips)
 
         response = self.client.execute(gql(formatted_query_string))
         if self.client == "CUSTOM":
@@ -368,18 +353,21 @@ class TheGraph(object):
         }
 
         response = requests.post(
-            BALANCER_API_ENDPOINT, json={
-                "query": query_string, "variables": params}
+            BALANCER_API_ENDPOINT, json={"query": query_string, "variables": params}
         )
         if response.status_code != 200:
             if "banned" in response.text and retries > 0:
                 # We sleep for 5 seconds to avoid being banned
                 time.sleep(5)
-                print   (
-                    "We got banned from the Balancer API. Sleeping for 5 seconds."
-                )
+                print("We got banned from the Balancer API. Sleeping for 5 seconds.")
                 return self.getSorGetSwapPaths(
-                    chain, swapAmount, tokenIn, tokenOut, swapType, swapOptions, queryBatchSwap
+                    chain,
+                    swapAmount,
+                    tokenIn,
+                    tokenOut,
+                    swapType,
+                    swapOptions,
+                    queryBatchSwap,
                 )
 
             raise Exception(
@@ -389,10 +377,10 @@ class TheGraph(object):
         return response.json()["data"]["sorGetSwapPaths"]
 
     def getCurrentPrices(
-            self,
-            chain: Chain,
-            cooldown: int = 5,
-            retries: int = 0,
+        self,
+        chain: Chain,
+        cooldown: int = 5,
+        retries: int = 0,
     ):
         """
         get the current prices of all pools
@@ -406,14 +394,14 @@ class TheGraph(object):
         }
         """
         response = requests.post(
-            BALANCER_API_ENDPOINT, json={
-                "query": query, 
-                "variables": {"chains": [chain.upper()]}
-            }
+            BALANCER_API_ENDPOINT,
+            json={"query": query, "variables": {"chains": [chain.upper()]}},
         )
         if response.status_code in [429, 500]:
             timeout = cooldown * (retries + 1)
-            print(f"We got banned from the Balancer API. Sleeping for {timeout} seconds.")
+            print(
+                f"We got banned from the Balancer API. Sleeping for {timeout} seconds."
+            )
             time.sleep(timeout)
             return self.getCurrentPrices(chain, cooldown, retries + 1)
         return response.json()["data"]["tokenGetCurrentPrices"]
@@ -422,10 +410,7 @@ class TheGraph(object):
 def main():
     network = Chain.GNOSIS.value
 
-    graph = TheGraph(
-        network,
-        customUrl=BALANCER_API_ENDPOINT,
-        usingJsonEndpoint=True)
+    graph = TheGraph(network, customUrl=BALANCER_API_ENDPOINT, usingJsonEndpoint=True)
 
     for i in range(0, 10):
         config = {
@@ -441,7 +426,7 @@ def main():
         paths = graph.getSorGetSwapPaths(**config)
         rate = paths["effectivePrice"]
         print(
-            f"{1 / float(rate) } for 1 {config['tokenIn']} to {config['tokenOut']} size: {config['swapAmount']} output: {paths['returnAmount']}"
+            f"{1 / float(rate)} for 1 {config['tokenIn']} to {config['tokenOut']} size: {config['swapAmount']} output: {paths['returnAmount']}"
         )
 
 
