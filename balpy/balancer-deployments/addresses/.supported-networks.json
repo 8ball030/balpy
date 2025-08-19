@@ -43,6 +43,10 @@
     "chainId": 8453,
     "block-explorer": "https://basescan.org"
   },
+  "mode":{
+    "chainId": 34443,
+    "block-explorer": "https://modescan.io/"
+  },
   "fantom": {
     "chainId": 250,
     "block-explorer": "https://ftmscan.com"
