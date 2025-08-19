@@ -77,7 +77,7 @@ class WeightedPool(WeightedMath):
         self._swap_fee = amount
 
     def set_weights(self, weights: dict):
-        if not weights.keys() in self._weights:
+        if weights.keys() not in self._weights:
             raise Exception("WEIGHT TICKER NOT FOUND, JOIN POOL FIRST")
         for key, amount in weights.items():
             if isinstance(amount, int) or isinstance(amount, float):

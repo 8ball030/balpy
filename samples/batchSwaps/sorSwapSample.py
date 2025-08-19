@@ -72,10 +72,7 @@ def main():
     print("==============================================================")
     print()
 
-    txHash = bal.balDoBatchSwap(
-        swap,
-        gasFactor=gasFactor,
-        gasPriceSpeed=gasSpeedTrade)
+    txHash = bal.balDoBatchSwap(swap, gasFactor=gasFactor, gasPriceSpeed=gasSpeedTrade)
 
     print("Batch Swap Txn Hash: ", txHash)
 

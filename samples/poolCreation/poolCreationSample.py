@@ -36,8 +36,7 @@ def main():
     print()
 
     tokens = list(pool["tokens"].keys())
-    initialBalances = [pool["tokens"][token]["initialBalance"]
-                       for token in tokens]
+    initialBalances = [pool["tokens"][token]["initialBalance"] for token in tokens]
     if not bal.erc20HasSufficientBalances(tokens, initialBalances):
         print("Please fix your insufficient balance before proceeding.")
         print("Quitting...")
