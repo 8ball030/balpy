@@ -408,6 +408,81 @@ class TheGraph(object):
             return self.getCurrentPrices(chain, cooldown, retries + 1)
         return response.json()["data"]["tokenGetCurrentPrices"]
 
+    def getTicker(self, chain: Chain, tokenIn: str, tokenOut: str, amount: float):
+        """Get the current bid/ask price of a token."""
+
+        query = """
+        query GetBidAsk(
+            $chain: GqlChain!,
+            $swapAmount: AmountHumanReadable!,
+            $tokenIn: String!,
+            $tokenOut: String!
+            ) {
+            ask: sorGetSwapPaths(
+                chain: $chain,
+                swapAmount: $swapAmount,
+                swapType: EXACT_IN,
+                tokenIn: $tokenIn,
+                tokenOut: $tokenOut
+            ) {
+                ...SorQuote
+            }
+
+            bid: sorGetSwapPaths(
+                chain: $chain,
+                swapAmount: $swapAmount,
+                swapType: EXACT_OUT,
+                tokenIn: $tokenIn,
+                tokenOut: $tokenOut
+            ) {
+                ...SorQuote
+            }
+            }
+
+            fragment SorQuote on GqlSorGetSwapPaths {
+            swaps {
+                assetOutIndex
+                amount
+                assetInIndex
+                poolId
+            }
+            returnAmount
+            tokenInAmount
+            tokenOutAmount
+            effectivePrice
+            tokenAddresses
+            tokenIn
+            }
+        """
+        params = {
+            "chain": chain.upper(),
+            "swapAmount": str(amount),
+            "tokenIn": tokenIn,
+            "tokenOut": tokenOut,
+        }
+
+        response = requests.post(
+            BALANCER_API_ENDPOINT, json={"query": query, "variables": params}
+        )
+
+        if response.status_code != 200:
+            raise Exception(
+                f"Error querying the Balancer API: {response.text} {response.status_code}"
+            )
+
+        response_json = response.json()
+        if response_json.get("errors"):
+            raise Exception(f"SOR GraphQL Error: {response_json.get('errors')}")
+
+        data = response_json.get("data", {})
+        ask_data = data.get("ask", {})
+        bid_data = data.get("bid", {})
+
+        if not ask_data or not bid_data:
+            raise Exception("Incomplete data returned from API")
+
+        return ask_data["effectivePrice"], bid_data["effectivePrice"]
+
 
 def main():
     network = Chain.GNOSIS.value
