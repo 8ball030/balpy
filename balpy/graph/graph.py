@@ -482,10 +482,8 @@ class TheGraph(object):
         ask_data = data.get("ask", {})
         bid_data = data.get("bid", {})
 
-
         if not ask_data or not bid_data:
             raise Exception("Incomplete data returned from API")
-        
 
         return data
 

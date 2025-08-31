@@ -2,10 +2,8 @@
 Example of the sor swaps module usage.
 """
 
-
 from datetime import datetime
 from rich import print
-from web3 import Web3
 from third_party.forks.balpy.balpy.balpy import balpy
 
 TZ = datetime.now().astimezone().tzinfo
@@ -16,7 +14,8 @@ rpcs = {
     "base": "https://base.drpc.org",
 }
 
-def setup_balpy(key_path, network: str = 'base') -> balpy:
+
+def setup_balpy(key_path, network: str = "base") -> balpy:
     """Set up balpy."""
     with open(key_path, encoding=DEFAULT_ENCODING) as file:
         key = file.read().strip()
@@ -25,17 +24,15 @@ def setup_balpy(key_path, network: str = 'base') -> balpy:
         manualEnv={
             "privateKey": key,
             "customRPC": rpcs[network],
-            "etherscanApiKey": '0x123',
+            "etherscanApiKey": "0x123",
         },
     )
     return bal
 
 
 def get_ticker_sor_data(
-        bal: balpy,
-        quote_asset: str,
-        base_asset: str,
-        amount: float) -> None:
+    bal: balpy, quote_asset: str, base_asset: str, amount: float
+) -> None:
     """Get buy and sell transactions."""
 
     orderBookData = bal.graph.getTicker(
@@ -84,12 +81,10 @@ def get_params_for_swap(
         },
     }
 
-def parse_book_data(data,
-                    bal: balpy,
-                    quote_asset: str,
-                    base_asset: str,
-                    amount: float
-                    ) -> dict:
+
+def parse_book_data(
+    data, bal: balpy, quote_asset: str, base_asset: str, amount: float
+) -> dict:
     """Parse book data."""
     actual_buy_rate, buy_mc_args = get_buy_rate(
         bal=bal,
@@ -105,10 +100,10 @@ def parse_book_data(data,
         amount=amount,
         sor_data=data,
     )
-    data['buy_mc_args'] = buy_mc_args
-    data['sell_mc_args'] = sell_mc_args
-    data['actual_buy_rate'] = actual_buy_rate
-    data['actual_sell_rate'] = actual_sell_rate
+    data["buy_mc_args"] = buy_mc_args
+    data["sell_mc_args"] = sell_mc_args
+    data["actual_buy_rate"] = actual_buy_rate
+    data["actual_sell_rate"] = actual_sell_rate
     return data
 
 
@@ -130,16 +125,17 @@ def get_buy_rate(
         is_buy=True,
         sender_address=sender_address or bal.address,
     )
-    batch_swap = bal.balSorResponseToBatchSwapFormat(params, sor_data.get("ask")).get("batchSwap", None)
+    batch_swap = bal.balSorResponseToBatchSwapFormat(params, sor_data.get("ask")).get(
+        "batchSwap", None
+    )
     mc_args = bal.balFormatBatchSwapData(batch_swap)
     # retrieve the actual rate from the limits
     limits = mc_args[-2]
     in_amt, out_amt = min(limits), max(limits)
-    input_amount = -in_amt * 10 ** -bal.erc20GetDecimals(base_asset) 
+    input_amount = -in_amt * 10 ** -bal.erc20GetDecimals(base_asset)
     output_amount = out_amt * 10 ** -bal.erc20GetDecimals(quote_asset)
-    real_rate =  output_amount / input_amount
+    real_rate = output_amount / input_amount
     return real_rate, mc_args
-
 
 
 def get_sell_rate(
@@ -152,7 +148,7 @@ def get_sell_rate(
 ) -> None:
     """Perform a sell of base asset for quote asset."""
     print("Processing sell of 100 OLAS with USDC")
-    
+
     params = get_params_for_swap(
         bal=bal,
         input_token_address=base_asset,
@@ -162,15 +158,16 @@ def get_sell_rate(
         sender_address=sender_address or bal.address,
     )
 
-    batch_swap = bal.balSorResponseToBatchSwapFormat(params, sor_data.get("bid")).get("batchSwap", None)
+    batch_swap = bal.balSorResponseToBatchSwapFormat(params, sor_data.get("bid")).get(
+        "batchSwap", None
+    )
     mc_args = bal.balFormatBatchSwapData(batch_swap)
     limits = mc_args[-2]
     in_amt, out_amt = min(limits), max(limits)
     input_amount = in_amt * 10 ** -bal.erc20GetDecimals(quote_asset)
     output_amount = -out_amt * 10 ** -bal.erc20GetDecimals(base_asset)
-    real_rate = input_amount /output_amount
+    real_rate = input_amount / output_amount
     return real_rate, mc_args
-
 
 
 def build_swap(
@@ -178,13 +175,14 @@ def build_swap(
     mc_args,
 ) -> None:
     """Perform a batch swap."""
-    vault = bal.balLoadContract('Vault')
+    vault = bal.balLoadContract("Vault")
     return vault.functions.batchSwap(*mc_args)
+
 
 def sign_and_send_transaction(
     bal: balpy,
     function_call,
-    ) -> None:
+) -> None:
     """Sign and send a transaction."""
     print("Signing and sending transaction...")
     tx = bal.buildTx(function_call, gasFactor=1.2)
@@ -192,13 +190,12 @@ def sign_and_send_transaction(
     print(f"Transaction hash: {tx_hash}")
 
 
-
 if __name__ == "__main__":
-    bal = setup_balpy(DEFAULT_KEYPATH, network='base')
-    quote_asset="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC
-    base_asset="0x9d0E8f5b25384C7310CB8C6aE32C8fbeb645d083"  # DRV
-    base_asset="0x54330d28ca3357F294334BDC454a032e7f353416"  # OLAS
-    amount=10
+    bal = setup_balpy(DEFAULT_KEYPATH, network="base")
+    quote_asset = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC
+    base_asset = "0x9d0E8f5b25384C7310CB8C6aE32C8fbeb645d083"  # DRV
+    base_asset = "0x54330d28ca3357F294334BDC454a032e7f353416"  # OLAS
+    amount = 10
 
     book_data = get_ticker_sor_data(
         bal,
@@ -217,22 +214,22 @@ if __name__ == "__main__":
     print(f"Processing buy of {amount} OLAS with USDC")
     function = build_swap(
         bal=bal,
-        mc_args=order_data['buy_mc_args'],
+        mc_args=order_data["buy_mc_args"],
     )
-    cost = order_data['actual_buy_rate'] * amount
+    cost = order_data["actual_buy_rate"] * amount
     print(f"Cost of buy: {cost} USDC")
     if input("Proceed with buy? (y/n): ") == "y":
         sign_and_send_transaction(
             bal=bal,
             function_call=function,
         )
-    
+
     print(f"Processing sell of {amount} OLAS with USDC")
-    received = order_data['actual_sell_rate'] * amount
+    received = order_data["actual_sell_rate"] * amount
     print(f"Received from sell: {received} USDC")
     function = build_swap(
         bal=bal,
-        mc_args=order_data['sell_mc_args'],
+        mc_args=order_data["sell_mc_args"],
     )
     if input("Proceed with sell? (y/n): ") == "y":
         sign_and_send_transaction(
@@ -240,9 +237,3 @@ if __name__ == "__main__":
             function_call=function,
         )
     print("Done.")
-
-
-
-
-
-
