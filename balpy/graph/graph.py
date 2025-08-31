@@ -424,7 +424,9 @@ class TheGraph(object):
                 swapType: EXACT_IN,
                 tokenIn: $tokenIn,
                 tokenOut: $tokenOut,
-                useProtocolVersion: 2
+                useProtocolVersion: 2,
+                considerPoolsWithHooks: true
+
             ) {
                 ...SorQuote
             }
@@ -435,7 +437,8 @@ class TheGraph(object):
                 swapType: EXACT_OUT,
                 tokenIn: $tokenOut,
                 tokenOut: $tokenIn,
-                useProtocolVersion: 2
+                useProtocolVersion: 2,
+                considerPoolsWithHooks: true
             ) {
                 ...SorQuote
             }
