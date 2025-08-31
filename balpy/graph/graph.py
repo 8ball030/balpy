@@ -408,7 +408,7 @@ class TheGraph(object):
             return self.getCurrentPrices(chain, cooldown, retries + 1)
         return response.json()["data"]["tokenGetCurrentPrices"]
 
-    def getTicker(self, chain: Chain, tokenIn: str, tokenOut: str, amount: float):
+    def getTicker(self, chain: Chain, baseAsset: str, quoteAsset: str, amount: float):
         """Get the current bid/ask price of a token."""
 
         query = """
@@ -418,22 +418,24 @@ class TheGraph(object):
             $tokenIn: String!,
             $tokenOut: String!
             ) {
-            ask: sorGetSwapPaths(
+            bid: sorGetSwapPaths(
                 chain: $chain,
                 swapAmount: $swapAmount,
                 swapType: EXACT_IN,
                 tokenIn: $tokenIn,
-                tokenOut: $tokenOut
+                tokenOut: $tokenOut,
+                useProtocolVersion: 2
             ) {
                 ...SorQuote
             }
 
-            bid: sorGetSwapPaths(
+            ask: sorGetSwapPaths(
                 chain: $chain,
                 swapAmount: $swapAmount,
                 swapType: EXACT_OUT,
-                tokenIn: $tokenIn,
-                tokenOut: $tokenOut
+                tokenIn: $tokenOut,
+                tokenOut: $tokenIn,
+                useProtocolVersion: 2
             ) {
                 ...SorQuote
             }
@@ -447,9 +449,11 @@ class TheGraph(object):
                 poolId
             }
             returnAmount
+            swapAmount
             tokenInAmount
             tokenOutAmount
             effectivePrice
+            effectivePriceReversed
             tokenAddresses
             tokenIn
             }
@@ -457,8 +461,8 @@ class TheGraph(object):
         params = {
             "chain": chain.upper(),
             "swapAmount": str(amount),
-            "tokenIn": tokenIn,
-            "tokenOut": tokenOut,
+            "tokenIn": baseAsset,
+            "tokenOut": quoteAsset,
         }
 
         response = requests.post(
@@ -478,10 +482,12 @@ class TheGraph(object):
         ask_data = data.get("ask", {})
         bid_data = data.get("bid", {})
 
+
         if not ask_data or not bid_data:
             raise Exception("Incomplete data returned from API")
+        
 
-        return ask_data["effectivePrice"], bid_data["effectivePrice"]
+        return data
 
 
 def main():
