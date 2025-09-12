@@ -408,6 +408,88 @@ class TheGraph(object):
             return self.getCurrentPrices(chain, cooldown, retries + 1)
         return response.json()["data"]["tokenGetCurrentPrices"]
 
+    def getTicker(self, chain: Chain, baseAsset: str, quoteAsset: str, amount: float):
+        """Get the current bid/ask price of a token."""
+
+        query = """
+        query GetBidAsk(
+            $chain: GqlChain!,
+            $swapAmount: AmountHumanReadable!,
+            $tokenIn: String!,
+            $tokenOut: String!
+            ) {
+            bid: sorGetSwapPaths(
+                chain: $chain,
+                swapAmount: $swapAmount,
+                swapType: EXACT_IN,
+                tokenIn: $tokenIn,
+                tokenOut: $tokenOut,
+                useProtocolVersion: 2,
+                considerPoolsWithHooks: true
+
+            ) {
+                ...SorQuote
+            }
+
+            ask: sorGetSwapPaths(
+                chain: $chain,
+                swapAmount: $swapAmount,
+                swapType: EXACT_OUT,
+                tokenIn: $tokenOut,
+                tokenOut: $tokenIn,
+                useProtocolVersion: 2,
+                considerPoolsWithHooks: true
+            ) {
+                ...SorQuote
+            }
+            }
+
+            fragment SorQuote on GqlSorGetSwapPaths {
+            swaps {
+                assetOutIndex
+                amount
+                assetInIndex
+                poolId
+            }
+            returnAmount
+            swapAmount
+            tokenInAmount
+            tokenOutAmount
+            effectivePrice
+            effectivePriceReversed
+            tokenAddresses
+            tokenIn
+            }
+        """
+        params = {
+            "chain": chain.upper(),
+            "swapAmount": str(amount),
+            "tokenIn": baseAsset,
+            "tokenOut": quoteAsset,
+        }
+
+        response = requests.post(
+            BALANCER_API_ENDPOINT, json={"query": query, "variables": params}
+        )
+
+        if response.status_code != 200:
+            raise Exception(
+                f"Error querying the Balancer API: {response.text} {response.status_code}"
+            )
+
+        response_json = response.json()
+        if response_json.get("errors"):
+            raise Exception(f"SOR GraphQL Error: {response_json.get('errors')}")
+
+        data = response_json.get("data", {})
+        ask_data = data.get("ask", {})
+        bid_data = data.get("bid", {})
+
+        if not ask_data or not bid_data:
+            raise Exception("Incomplete data returned from API")
+
+        return data
+
 
 def main():
     network = Chain.GNOSIS.value
